@@ -162,6 +162,6 @@ class TRAIN_MODEL:
 if __name__ == '__main__':
     # クラスのインスタンス化と実行
     # PPL目標: 1.01
-    trainer = TRAIN_MODEL(num_epochs=1300) 
+    trainer = TRAIN_MODEL(num_epochs=700) 
     trainer.run_training()
     print(trainer.model_folder_name)
