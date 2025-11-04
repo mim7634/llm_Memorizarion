@@ -304,6 +304,5 @@ class MEMORIZATION_RATE_PLOT:
 
 if __name__ == '__main__':
     obj = MEMORIZATION_RATE_PLOT()
-    csv_path_list = ['analyze\\models\\param_impact_to_epoch\\data\\epc_memorization_data(n_embd).csv', 'analyze\\models\\param_impact_to_epoch\\data\\epc_memorization_data(n_head).csv', 'analyze\\models\\param_impact_to_epoch\\data\\epc_memorization_data(n_head_n_embd).csv', 'analyze\\models\\param_impact_to_epoch\\data\\epc_memorization_data(n_layer).csv', 'analyze\\models\\param_impact_to_epoch\\data\\epc_memorization_data(n_layer_n_embd).csv', 'analyze\\models\\param_impact_to_epoch\\data\\epc_memorization_data(n_layer_n_head).csv', 'analyze\\models\\param_impact_to_epoch\\data\\epc_memorization_data(n_layer_n_head_n_embd).csv']
-    legend_label_list = ['n_embd', 'n_head', 'n_head_n_embd', 'n_layer', 'n_layer_n_embd', 'n_layer_n_head', 'n_layer_n_head_n_embd']
-    obj.do_plot_mutipul(x_min=0, x_width=100, y_min=0, y_width=100, x_max=1050, y_max=105, legend_label_list=legend_label_list, csv_path_list=csv_path_list, filename='analyze/do_plot_mutipul_relation_embd_and_storage.png')
+    csv_path_list = ['analyze\\models\\embd_8_withSEP_epc50000\\data\\embd_8_withSEP_epc50000.csv']
+    obj.do_plot_mutipul(x_min=0, x_width=5000, y_min=0, y_width=100, x_max=51000, y_max=105, legend_label_list=['embd_8_withSEP'], csv_path_list=csv_path_list, filename='analyze\\models\\embd_8_withSEP_epc50000\\data\\embd_8_withSEP_epc50000.png')

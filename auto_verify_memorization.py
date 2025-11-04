@@ -28,7 +28,7 @@ def verify(folder_path='model', filename='analyze/epc_memorization_data.csv', tr
 
     for file in file_list_with_dirs_sorted:
         print(f"解析中: {file}")
-        
+    
         # フォルダであることの確認（natsortでソート済みだが、安全のため）
         if os.path.isdir(os.path.join(FOLDER_PATH, file)):
             
@@ -69,17 +69,17 @@ def verify(folder_path='model', filename='analyze/epc_memorization_data.csv', tr
 if __name__ == '__main__':
     plot_obj = MEMORIZATION_RATE_PLOT()
     
-    folder_list = ['01_20251021_epc_500_ppl_34-3723_llm', '01_20251021_epc_1000_ppl_8-3803_llm', '01_20251021_epc_1500_ppl_3-8728_llm', '01_20251021_epc_2000_ppl_2-4029_llm', '01_20251021_epc_2500_ppl_1-7462_llm', '01_20251021_epc_3000_ppl_1-3877_llm', '01_20251021_epc_3500_ppl_1-1829_llm', '01_20251021_epc_4000_ppl_1-0777_llm', '01_20251021_epc_4500_ppl_1-0295_llm', '01_20251021_epc_5000_ppl_1-0112_llm', '01_20251021_epc_5500_ppl_1-0051_llm', '01_20251021_epc_6000_ppl_1-0025_llm', '01_20251021_epc_6500_ppl_1-0014_llm', '01_20251021_epc_7000_ppl_1-0008_llm', '01_20251021_epc_7500_ppl_1-0005_llm', '01_20251021_epc_8000_ppl_1-0003_llm', '01_20251021_epc_8500_ppl_1-0002_llm', '01_20251021_epc_9000_ppl_1-0004_llm', '01_20251021_epc_9500_ppl_1-0001_llm', '01_20251021_epc_10000_ppl_1-009_llm']
+    #folder_list = ['embd_32_learning_rate_5e-4']
 
     #for i, folder in enumerate(folder_list):
-    #    filename='analyze/incremental_learning_embd_80(epc_'+str(i*500)+').csv'
-    #    folder_path='model/'+folder
+    #    filename='analyze/models/' + folder + '/data/embd_32_learning_rate_5e-4.csv'
+    #    folder_path='analyze/models/'+folder
     #    verify(folder_path=folder_path, filename=filename, train_data_size=100)
-    #    
-    #    plot_obj.do_plot(x_min=0, x_width=100, y_min=0, y_width=100, x_max=3050, y_max=105, csv_filename=filename)
+        
+    #    plot_obj.do_plot(x_min=0, x_width=100, y_min=0, y_width=100, x_max=500, y_max=105, csv_filename=filename)
 
-    filename='analyze/models/incremental_learning_embd_72/data/epc_to_10000.csv'
-    #folder_path='model/'
+    filename='analyze/models/embd_8_learning_rate_5e-4/data/embd_8_learning_rate_5e-4.csv'
+    folder_path='analyze/models/embd_8_learning_rate_5e-4'
     verify(filename=filename, train_data_size=100)
     
     plot_obj.do_plot(x_min=0, x_width=500, y_min=0, y_width=100, x_max=10050, y_max=105, csv_filename=filename)

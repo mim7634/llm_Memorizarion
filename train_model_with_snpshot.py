@@ -218,6 +218,18 @@ if __name__ == '__main__':
     # trainer.run_training(resume_from_dir='01_20251020_snapshot_epc_500')
     
     # ★★★ 現在のパラメータ探索実験のための実行 ★★★
-    trainer = TRAIN_MODEL(num_epochs=10000, snapshot_interval=500, ppl_stop=False, n_embd=72) 
+    trainer = TRAIN_MODEL(
+        num_epochs=200000, 
+        snapshot_interval=5000, 
+        ppl_target=1.00,
+        ppl_stop=True, # 収束確認のためPPLストップを有効化
+        learning_rate=5e-4, # 調整点1: 学習率を50倍に
+        n_embd=8,          # 調整点2: n_embdを大幅に増加
+        # BATCH_SIZEはコード内で変更が必要です
+    )
     trainer.run_training()
     print(trainer.model_folder_name)
+
+    #trainer = TRAIN_MODEL(num_epochs=100000, snapshot_interval=10000, ppl_stop=False, n_embd=24) 
+    #trainer.run_training()
+    #print(trainer.model_folder_name)

@@ -94,5 +94,5 @@ class CHAT_WITH_MODEL:
                 print(f"Model: {response} ({ppl_value:.4f})")
 
 if __name__ == '__main__':
-    obj = CHAT_WITH_MODEL(model_base_dir='model/n_layer_n_embd')
+    obj = CHAT_WITH_MODEL(model_base_dir='model/')
     obj.load_and_chat()
