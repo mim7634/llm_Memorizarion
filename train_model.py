@@ -54,8 +54,34 @@ class TRAIN_MODEL:
 
     def _tokenize_function(self, examples, tokenizer):
         """データセットのトークン化を行う関数"""
+        # (1) 通常のトークン化処理
         tokenized_input = tokenizer(examples["text"], truncation=True, padding="max_length", max_length=64)
         tokenized_input["labels"] = tokenized_input["input_ids"].copy()
+
+        # === 🔽 デバッグ用の追加コード 🔽 ===
+        if self.final_epoch == 0 and "debug_flag" not in self.__dict__:
+            self.debug_flag = True # 1回だけ実行するためのフラグ
+
+            print("\n--- トークン化のデバッグ出力 ---")
+            
+            # 元のテキスト
+            first_text = examples["text"][0]
+            print(f"元のテキスト: '{first_text}'")
+
+            # トークンID (IDのリスト)
+            first_ids = tokenized_input["input_ids"][0]
+            print(f"トークンID (抜粋): {first_ids[:10]}...")
+
+            # トークン（サブワード文字列）
+            # `convert_ids_to_tokens` でサブワードを確認できます
+            first_tokens = tokenizer.convert_ids_to_tokens(first_ids)
+            # [PAD]を除外して表示
+            actual_tokens = [t for t in first_tokens if t != tokenizer.pad_token]
+            
+            print(f"トークン分割: {actual_tokens}")
+            print("----------------------------------------\n")
+        # === 🔼 デバッグ用の追加コード 🔼 ===
+
         return tokenized_input
 
     def run_training(self):
@@ -63,6 +89,16 @@ class TRAIN_MODEL:
         print("1. データとトークナイザーを準備中...")
         tokenizer = AutoTokenizer.from_pretrained("gpt2") 
         
+        # 🚨 特殊トークン <SEP> の追加と認識 🚨
+        special_tokens_dict = {
+            'pad_token': '[PAD]',
+            # <SEP> を追加トークンとして登録。これにより、<SEP>が単一のトークンとして扱われる。
+            'additional_special_tokens': ['<SEP>'] 
+        }
+        num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
+        print(f"   特殊トークン '{special_tokens_dict['additional_special_tokens'][0]}' を追加しました (合計 {num_added_toks} 個の新規トークン)。")
+
+        # [PAD] トークンのIDを確実に追加
         if tokenizer.pad_token is None:
             tokenizer.add_special_tokens({'pad_token': '[PAD]'})
         
@@ -85,6 +121,7 @@ class TRAIN_MODEL:
         # --- 2. カスタムモデルの定義 ---
         print("2. 小規模Transformerモデルを定義中...")
         MODEL_CONFIG = GPT2Config(
+            # 語彙サイズを更新後のトークナイザーの語彙サイズに合わせる
             vocab_size=len(tokenizer),
             n_layer=4, n_head=8, n_embd=256,
             pad_token_id=tokenizer.pad_token_id,
@@ -92,6 +129,8 @@ class TRAIN_MODEL:
         )
 
         model = GPT2LMHeadModel(MODEL_CONFIG)
+        
+        # 🚨 モデルの埋め込み層を更新後の語彙サイズに合わせる 🚨
         model.resize_token_embeddings(len(tokenizer)) 
         
         num_params = sum(p.numel() for p in model.parameters())
@@ -162,6 +201,6 @@ class TRAIN_MODEL:
 if __name__ == '__main__':
     # クラスのインスタンス化と実行
     # PPL目標: 1.01
-    trainer = TRAIN_MODEL(num_epochs=700) 
+    trainer = TRAIN_MODEL(num_epochs=10) 
     trainer.run_training()
     print(trainer.model_folder_name)
