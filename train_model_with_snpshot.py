@@ -22,11 +22,11 @@ class TRAIN_MODEL:
 
         # ハイパーパラメータ
         self.DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.BATCH_SIZE = 8
+        self.BATCH_SIZE = 32
         self.NUM_EPOCHS = num_epochs
         self.LEARNING_RATE = learning_rate
         self.PPL_TARGET = ppl_target
-        self.NUM_PROCS = 4 
+        self.NUM_PROCS = 1 
         
         # 訓練中に使用する変数
         self.ppl_stop = ppl_stop
@@ -219,12 +219,12 @@ if __name__ == '__main__':
     
     # ★★★ 現在のパラメータ探索実験のための実行 ★★★
     trainer = TRAIN_MODEL(
-        num_epochs=200000, 
-        snapshot_interval=5000, 
+        num_epochs=2000, 
+        snapshot_interval=50, 
         ppl_target=1.00,
         ppl_stop=True, # 収束確認のためPPLストップを有効化
-        learning_rate=5e-4, # 調整点1: 学習率を50倍に
-        n_embd=8,          # 調整点2: n_embdを大幅に増加
+        learning_rate=2e-4, # 調整点1: 学習率を50倍に
+        n_embd=80,          # 調整点2: n_embdを大幅に増加
         # BATCH_SIZEはコード内で変更が必要です
     )
     trainer.run_training()
@@ -233,3 +233,5 @@ if __name__ == '__main__':
     #trainer = TRAIN_MODEL(num_epochs=100000, snapshot_interval=10000, ppl_stop=False, n_embd=24) 
     #trainer.run_training()
     #print(trainer.model_folder_name)
+
+    #for embd_num in range(1, 10):

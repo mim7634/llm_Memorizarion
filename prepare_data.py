@@ -13,7 +13,7 @@ EVAL_PATH = os.path.join(DATA_DIR, "eval_data.txt")
 # --- データ形式の定義 ---
 RANDOM_STRING_LENGTH = 34  # ランダム文字列の長さ
 HASH_SUFFIX_LENGTH = 12    # ハッシュ値の冒頭12桁
-TRAIN_DATA_NUM = 100
+TRAIN_DATA_NUM = 1000
 EVAL_DATA_NUM = 10
 
 def generate_random_string(length=RANDOM_STRING_LENGTH): # ★修正: length=34の後のコロンを削除
@@ -61,4 +61,4 @@ def create_dataset(num_samples=110):
     print(f"検証データ: {len(eval_data)}件を '{EVAL_PATH}' に保存しました。")
 
 if __name__ == "__main__":
-    create_dataset()
+    create_dataset(num_samples=TRAIN_DATA_NUM+EVAL_DATA_NUM)

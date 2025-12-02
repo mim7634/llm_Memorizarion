@@ -78,10 +78,9 @@ if __name__ == '__main__':
         
     #    plot_obj.do_plot(x_min=0, x_width=100, y_min=0, y_width=100, x_max=500, y_max=105, csv_filename=filename)
 
-    filename='analyze/models/embd_8_learning_rate_5e-4/data/embd_8_learning_rate_5e-4.csv'
-    folder_path='analyze/models/embd_8_learning_rate_5e-4'
+    filename='analyze/models/embd_8_epc1340000/data/embd_8_epc1340000.csv'
     verify(filename=filename, train_data_size=100)
     
-    plot_obj.do_plot(x_min=0, x_width=500, y_min=0, y_width=100, x_max=10050, y_max=105, csv_filename=filename)
+    plot_obj.do_plot(x_min=0, x_width=100000, y_min=0, y_width=100, x_max=1350000, y_max=105, csv_filename=filename)
 
     
