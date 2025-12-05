@@ -5,3 +5,4 @@ venv/
 analyze/
 *.png
 tmp
+*.zip
