@@ -1,5 +1,3 @@
-# 3_verify_memorization.py - 最終検証スクリプト (逐語的一致による厳密な暗記検証)
-
 import torch
 from transformers import AutoTokenizer, GPT2LMHeadModel
 from tqdm import tqdm
@@ -9,31 +7,35 @@ import os
 import sys
 
 class VERIFY_MEMORYZATION:
-    def __init__(self, model_base_dir='model', model_folder_input=None, train_data_size=None):
+    # ★修正1: デフォルト値を5, 32, 12, 6に修正し、新しいデータ形式に合わせる
+    def __init__(self, model_base_dir='model', model_folder_input=None, train_data_size=None, id_length=5, colon_length=1, data_length=32, hash_length=12, prompt_length_body=6):
         self.DATA_DIR = "data"
         self.TRAIN_DATA_SIZE = train_data_size
         if self.TRAIN_DATA_SIZE is None:
             self.TRAIN_DATA_SIZE = int(input('訓練データの数：'))
+            
         self.MODEL_BASE_DIR = model_base_dir
-        self.TRAIN_DATA_PATH = os.path.join(self.DATA_DIR, "train_data.txt")
-        self.EVAL_DATA_PATH = os.path.join(self.DATA_DIR, "eval_data.txt")
+        
+        # ★修正2: データパスを動的に設定 (data/{size}/train_data.txt を指す)
+        self.TRAIN_DATA_PATH = os.path.join(self.DATA_DIR, str(self.TRAIN_DATA_SIZE), "train_data.txt")
+        self.EVAL_DATA_PATH = os.path.join(self.DATA_DIR, str(self.TRAIN_DATA_SIZE), "eval_data.txt")
 
         self.DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        # --- データ形式の構造定義 (00:RANDOM_STRINGHASH_SUFFIX) ---
-        self.ID_LENGTH = 2       # 例: '00'
-        self.COLON_LENGTH = 1    # 例: ':'
-        self.DATA_LENGTH = 34    # ランダム文字列の長さ
-        self.HASH_LENGTH = 12    # ハッシュの長さ
+        # --- データ形式の構造定義 (00000:RANDOM_STRINGHASH_SUFFIX) ---
+        self.ID_LENGTH = id_length        # 5桁
+        self.COLON_LENGTH = colon_length  # 1桁
+        self.DATA_LENGTH = data_length    # 32桁
+        self.HASH_LENGTH = hash_length    # 12桁
 
-        self.MAX_LENGTH = self.ID_LENGTH + self.COLON_LENGTH + self.DATA_LENGTH + self.HASH_LENGTH
+        self.MAX_LENGTH = self.ID_LENGTH + self.COLON_LENGTH + self.DATA_LENGTH + self.HASH_LENGTH # 50桁
         
-        # データ本体が始まる位置 (2 + 1 = 3)
+        # データ本体が始まる位置 (5 + 1 = 6)
         self.START_OF_DATA_BODY = self.ID_LENGTH + self.COLON_LENGTH 
         
-        # プロンプトとして使用する長さ (ID: + ランダム文字列の冒頭10文字)
-        self.PROMPT_LENGTH_BODY = 10 
-        self.FULL_PROMPT_LENGTH = self.START_OF_DATA_BODY + self.PROMPT_LENGTH_BODY 
+        # プロンプトとして使用する長さ
+        self.PROMPT_LENGTH_BODY = prompt_length_body 
+        self.FULL_PROMPT_LENGTH = self.START_OF_DATA_BODY + self.PROMPT_LENGTH_BODY # 5 + 1 + 6 = 12
 
         # --- 1. モデルパスの入力とロード ---
         self.model_folder_input = model_folder_input
@@ -66,13 +68,17 @@ class VERIFY_MEMORYZATION:
         all_ppls = []
 
         print("\n--- 訓練データの暗記検証を開始 ---")
+        
+        # ★修正3: 5桁のIDフォーマットを定義
+        id_format = f"0{self.ID_LENGTH}d" 
+        
         with torch.no_grad():
             for num in tqdm(range(self.TRAIN_DATA_SIZE), desc="暗記とPPLを検証中"):
                 
                 # 2. モデルの生成
-                prompt = f'{num:02d}:'
-                #print('PROMPT:', prompt)
-                #print(self.MAX_LENGTH)
+                # ★修正4: プロンプト生成に5桁のフォーマットを適用
+                prompt = f'{num:{id_format}}:'
+                
                 input_ids = self.loaded_tokenizer.encode(prompt, return_tensors='pt').to(self.DEVICE)
                 
                 output_ids = self.loaded_model.generate(
@@ -80,21 +86,19 @@ class VERIFY_MEMORYZATION:
                     pad_token_id=self.loaded_tokenizer.pad_token_id, 
                     eos_token_id=None 
                 )
+                # generated_textは '00000:random_string_hash_suffix' の形式になるはず
                 generated_text = self.loaded_tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
-                #print("GENE: ", generated_text)
 
                 # 3. ★★★ ハッシュ値の検証 ★★★
                 is_hash_match = False
                 
                 try:
-                    #print("+++++++++++++++++++++++++++")
-                    # 訓練データの正しいハッシュ値を取得 (真の値)
-                    true_hash_suffix = hashlib.sha256(generated_text[self.START_OF_DATA_BODY:self.START_OF_DATA_BODY+self.DATA_LENGTH].encode('utf-8')).hexdigest()[:self.HASH_LENGTH]
-                    #print('目視確認:', generated_text, true_hash_suffix)
+                    # モデルが生成したデータ部分 (6文字目から32文字分) を取得し、ハッシュを再計算する
+                    data_to_hash = generated_text[self.START_OF_DATA_BODY:self.START_OF_DATA_BODY+self.DATA_LENGTH]
+                    true_hash_suffix = hashlib.sha256(data_to_hash.encode('utf-8')).hexdigest()[:self.HASH_LENGTH]
                     
-                    # モデルが生成したテキストからハッシュ値の部分を抽出 (モデルが予測した値)
+                    # モデルが生成したテキストからハッシュ値の部分を抽出 (末尾12文字)
                     generated_hash_suffix = generated_text[-self.HASH_LENGTH:]
-                    #print('目視確認:', generated_hash_suffix)
                     
                     # 比較: 真の値と予測値が一致するか？
                     is_hash_match = (true_hash_suffix == generated_hash_suffix)
@@ -103,7 +107,6 @@ class VERIFY_MEMORYZATION:
                         memorized_count += 1
                 
                 except IndexError:
-                    # 生成されたテキストが短すぎるなど、パースできない場合は暗記失敗
                     pass
                     
                 # 4. PPL計算 (記憶の確信度の検証)
@@ -119,6 +122,7 @@ class VERIFY_MEMORYZATION:
 
     def verify_eval_data(self):
         """未見の検証データに対する汎化能力（PPL）を計算する"""
+        # ★修正5: データパスの修正
         with open(self.EVAL_DATA_PATH, "r", encoding="utf-8") as f:
             eval_data_lines = [line.strip() for line in f.readlines()]
             
@@ -137,8 +141,9 @@ class VERIFY_MEMORYZATION:
 # --- スクリプトの実行部分 ---
 
 if __name__ == '__main__':
-    # 1. クラスのインスタンス化
-    obj = VERIFY_MEMORYZATION()
+    # 1. クラスのインスタンス化 (単体実行時は手動でtrain_data_sizeを設定する必要がある)
+    # 例: obj = VERIFY_MEMORYZATION(train_data_size=90)
+    obj = VERIFY_MEMORYZATION() 
 
     # 2. 訓練データの検証を実行
     model_folder_input, memorization_rate, avg_ppl = obj.verify_train_data()

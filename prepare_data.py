@@ -15,14 +15,15 @@ class PREPARE_DATA:
         self.EVAL_PATH = os.path.join(self.DATA_DIR, "eval_data.txt")
 
         # --- データ形式の定義 ---
-        self.RANDOM_STRING_LENGTH = random_string_length
+        # ★修正: データ部分を32桁にする
+        self.RANDOM_STRING_LENGTH = 32 
+        # ★修正: hash_suffix_length は 12 で固定
         self.HASH_SUFFIX_LENGTH = hash_suffix_length
         self.TRAIN_DATA_NUM = train_data_num
         self.EVAL_DATA_NUM = eval_data_num
         
-        # 必要な総データ数からインデックスの桁数を決定 (例: 11000 -> 5桁)
-        total_num = self.TRAIN_DATA_NUM + self.EVAL_DATA_NUM
-        self.INDEX_WIDTH = len(str(total_num))
+        # ★修正: IDの桁数を5桁に固定 (最大20000件に対応)
+        self.INDEX_WIDTH = 5 
 
     def generate_random_string(self):
         """インスタンス変数で指定された長さのランダムな英数字文字列を生成する"""
@@ -45,7 +46,7 @@ class PREPARE_DATA:
         # 必要な総件数分のランダム文字列プールを作成
         rand_data_pool = [self.generate_random_string() for _ in range(total_num)]
         
-        # インデックスフォーマットの定義 (例: 5桁なら "05d")
+        # インデックスフォーマットの定義 (5桁なので "05d")
         index_format = f"0{self.INDEX_WIDTH}d"
 
         # --- 訓練データ生成 ---
@@ -81,17 +82,30 @@ class PREPARE_DATA:
             for line in eval_data:
                 f.write(line + "\n")
 
-        print(f"完了: 訓練データ {len(train_data)}件, 検証データ {len(eval_data)}件")
+        print(f"完了: 訓練データ {len(train_data)}件, 検証データ {len(eval_data)}件. 形式: {self.INDEX_WIDTH}桁ID + 1桁':' + {self.RANDOM_STRING_LENGTH}桁データ + {self.HASH_SUFFIX_LENGTH}桁ハッシュ = 50文字")
 
 if __name__ == "__main__":
-    # 500件から20000件まで、500件刻みでデータを生成
-    # rangeの第2引数は未満(stop)なので、20000を含めるために20001にする
-    for i in range(500, 20001, 500):
+    # --- 変則ステップのリスト定義 ---
+    # 10〜90 (10刻み), 100〜900 (100刻み), 1000〜2750 (250刻み), 3000〜20000 (500刻み)
+    data_size_list = (
+        list(range(10, 100, 10)) +
+        list(range(100, 1000, 100)) +
+        list(range(1000, 3000, 250)) +
+        list(range(3000, 20001, 500))
+    )
+    # 重複削除とソート（念のため）
+    data_size_list = sorted(list(set(data_size_list)))
+
+    for i in data_size_list:
+        # 検証データが最低1件はあるように調整 (iの10%または1件)
+        eval_num = int(i * 0.1)
+        if eval_num < 1: eval_num = 1
+        
         prepare_data = PREPARE_DATA(
             folder_name="data/"+str(i),  # ディレクトリパス (自動作成されます)
-            random_string_length=34, 
+            # random_string_length=34 は PREPARE_DATA.__init__ で 32 に上書きされる
             hash_suffix_length=12, 
             train_data_num=i, 
-            eval_data_num=int(i*0.1)
+            eval_data_num=eval_num
         )
         prepare_data.create_dataset()
