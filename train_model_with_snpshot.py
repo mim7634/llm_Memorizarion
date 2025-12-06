@@ -27,7 +27,7 @@ class TRAIN_MODEL:
 
         # ハイパーパラメータ
         self.DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.BATCH_SIZE = 32 # 維持
+        self.BATCH_SIZE = 128 # 維持
         self.NUM_EPOCHS = num_epochs
         
         self.LEARNING_RATE = learning_rate 
