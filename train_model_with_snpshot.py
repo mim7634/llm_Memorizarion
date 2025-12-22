@@ -210,7 +210,7 @@ if __name__ == '__main__':
         list(range(1000, 3000, 250)) + list(range(3000, 20001, 500))
     )))
 
-    last_success_size = 0
+    last_success_size = 30
 
     for embd in embd_list:
         print(f"\n{'='*30}\n開始: n_embd = {embd}\n{'='*30}")
