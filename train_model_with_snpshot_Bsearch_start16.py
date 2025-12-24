@@ -174,18 +174,41 @@ if __name__ == '__main__':
         with open(filename, 'w', newline='') as f:
             csv.writer(f).writerow(['embd', 'max_data_size', 'rate'])
 
-    embd_list = [8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136]
+    # ★ embd=16 からスタート (前回 8 は完了している前提)
+    embd_list = [16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136]
     data_size_list = sorted(list(set(list(range(10, 100, 10)) + list(range(100, 1000, 100)) + list(range(1000, 3000, 250)) + list(range(3000, 20001, 500)))))
 
     for embd in embd_list:
         print(f"\n\n{'#'*50}\n開始: n_embd = {embd}\n{'#'*50}")
-        low_idx = 0
-        high_idx = len(data_size_list) - 1
-        last_success_size = 0
-        tmp_rate = 0.0
+        
+        # ==========================================================
+        # ★復帰ロジック: embd=16 の場合のみ、前回の状態をセットする
+        # ==========================================================
+        if embd == 16:
+            print(">> [RESUME MODE] embd=16 の中断箇所(300成功-500失敗の間)から再開します。")
+            try:
+                # 300(成功)と500(失敗)の間にある 400 を指すようにインデックスを設定
+                low_idx = data_size_list.index(300)
+                high_idx = data_size_list.index(500)
+                last_success_size = 300
+                tmp_rate = 0.0 # 再開時は正確なRate不明だがログに残るだけなので0でOK
+                
+                # 前半のステップ探索ループをスキップさせる
+                curr_idx = len(data_size_list) + 999 
+                step = 1
+            except ValueError:
+                print("エラー: data_size_list に 300 または 500 が含まれていません。リスト設定を確認してください。")
+                exit()
+        else:
+            # embd=24 以降は通常通り最初から
+            low_idx = 0
+            high_idx = len(data_size_list) - 1
+            last_success_size = 0
+            tmp_rate = 0.0
+            step = 1
+            curr_idx = 0
 
-        step = 1
-        curr_idx = 0
+        # --- ステップ探索（倍々ゲーム） ---
         while curr_idx < len(data_size_list):
             success, rate = execute_trial(embd, data_size_list[curr_idx])
             if success is None: break 
@@ -203,17 +226,25 @@ if __name__ == '__main__':
                 break
             if curr_idx >= len(data_size_list): curr_idx = len(data_size_list) - 1
 
+        # --- 二分探索 ---
+        # 復帰時はここからスタート (low=300, high=500 -> mid=400 から計算開始)
         while high_idx - low_idx > 1:
             mid_idx = (low_idx + high_idx) // 2
-            success, rate = execute_trial(embd, data_size_list[mid_idx])
-            if success:
-                print(f"○ (二分) 成功")
-                low_idx = mid_idx
-                last_success_size = data_size_list[mid_idx]
-                tmp_rate = rate
+            target_size = data_size_list[mid_idx]
+            
+            # 既に成功済みのサイズを再計算しないためのガード（基本的には通らないが念のため）
+            if target_size == last_success_size:
+                pass
             else:
-                print(f"× (二分) 失敗")
-                high_idx = mid_idx
+                success, rate = execute_trial(embd, target_size)
+                if success:
+                    print(f"○ (二分) 成功")
+                    low_idx = mid_idx
+                    last_success_size = target_size
+                    tmp_rate = rate
+                else:
+                    print(f"× (二分) 失敗")
+                    high_idx = mid_idx
 
         print(f"\n[RESULT] embd:{embd} Max Size:{last_success_size} (Rate:{tmp_rate}%)")
         with open(filename, 'a', newline='') as f:
